@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { UserRole } from '../types';
 import { 
   LayoutDashboard, 
@@ -11,7 +11,9 @@ import {
   LogOut,
   CreditCard,
   Settings,
-  Database
+  Database,
+  Menu,
+  X
 } from 'lucide-react';
 
 interface LayoutProps {
@@ -33,6 +35,8 @@ const Layout: React.FC<LayoutProps> = ({
   currentView, 
   setCurrentView 
 }) => {
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
   const getMenuItems = () => {
     const common = [
       { id: 'dashboard', label: 'الرئيسية', icon: LayoutDashboard },
@@ -72,20 +76,45 @@ const Layout: React.FC<LayoutProps> = ({
     }
   };
 
+  const handleNavItemClick = (viewId: string) => {
+    setCurrentView(viewId);
+    setIsMobileMenuOpen(false);
+  };
+
   return (
     <div className="flex h-screen bg-slate-50 overflow-hidden">
+      {/* Mobile Backdrop */}
+      {isMobileMenuOpen && (
+        <div 
+          className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-40 lg:hidden"
+          onClick={() => setIsMobileMenuOpen(false)}
+        ></div>
+      )}
+
       {/* Sidebar */}
-      <aside className="w-64 bg-white border-l border-slate-200 flex flex-col shadow-sm">
-        <div className="p-6 flex items-center gap-3">
-          <div className="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center text-white font-bold text-xl">أ</div>
-          <h1 className="text-xl font-bold text-slate-800">مدرسة الأمل</h1>
+      <aside className={`
+        fixed inset-y-0 right-0 z-50 w-64 bg-white border-l border-slate-200 flex flex-col shadow-xl transition-transform duration-300 ease-in-out
+        lg:translate-x-0 lg:static lg:shadow-sm
+        ${isMobileMenuOpen ? 'translate-x-0' : 'translate-x-full'}
+      `}>
+        <div className="p-6 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center text-white font-bold text-xl">أ</div>
+            <h1 className="text-xl font-bold text-slate-800">مدرسة الأمل</h1>
+          </div>
+          <button 
+            className="lg:hidden p-2 text-slate-400 hover:text-slate-600"
+            onClick={() => setIsMobileMenuOpen(false)}
+          >
+            <X size={20} />
+          </button>
         </div>
 
-        <nav className="flex-1 px-4 space-y-1">
+        <nav className="flex-1 px-4 space-y-1 overflow-y-auto">
           {getMenuItems().map((item) => (
             <button
               key={item.id}
-              onClick={() => setCurrentView(item.id)}
+              onClick={() => handleNavItemClick(item.id)}
               className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${
                 currentView === item.id 
                   ? 'bg-blue-50 text-blue-600 font-medium' 
@@ -110,43 +139,51 @@ const Layout: React.FC<LayoutProps> = ({
       </aside>
 
       {/* Main Content */}
-      <main className="flex-1 flex flex-col overflow-hidden">
+      <main className="flex-1 flex flex-col overflow-hidden w-full">
         {/* Topbar */}
-        <header className="h-16 bg-white border-b border-slate-200 px-8 flex items-center justify-between shadow-sm z-10">
+        <header className="h-16 bg-white border-b border-slate-200 px-4 md:px-8 flex items-center justify-between shadow-sm z-10">
           <div className="flex items-center gap-4">
-            <span className="text-slate-500 font-medium">مرحباً بك،</span>
-            <span className="text-slate-900 font-bold">{userName}</span>
-            <span className="px-2 py-0.5 bg-slate-100 text-slate-600 text-xs rounded-full border border-slate-200 uppercase">
-              {role === UserRole.ADMIN ? 'مدير' : role === UserRole.TEACHER ? 'معلم' : role === UserRole.PARENT ? 'ولي أمر' : 'طالب'}
-            </span>
+            <button 
+              className="lg:hidden p-2 text-slate-500 hover:bg-slate-50 rounded-lg transition-colors"
+              onClick={() => setIsMobileMenuOpen(true)}
+            >
+              <Menu size={24} />
+            </button>
+            <div className="hidden sm:flex items-center gap-2 md:gap-4 overflow-hidden">
+              <span className="text-slate-500 font-medium whitespace-nowrap">مرحباً،</span>
+              <span className="text-slate-900 font-bold truncate max-w-[150px]">{userName}</span>
+              <span className="hidden md:inline-block px-2 py-0.5 bg-slate-100 text-slate-600 text-[10px] rounded-full border border-slate-200 uppercase">
+                {role === UserRole.ADMIN ? 'مدير' : role === UserRole.TEACHER ? 'معلم' : role === UserRole.PARENT ? 'ولي أمر' : 'طالب'}
+              </span>
+            </div>
           </div>
           
-          <div className="flex items-center gap-6">
-            {/* Role Switcher for Demo Purposes */}
-            <div className="flex gap-1 bg-slate-100 p-1 rounded-lg">
+          <div className="flex items-center gap-2 md:gap-6">
+            {/* Role Switcher for Demo - Hidden on very small screens or made more compact */}
+            <div className="hidden sm:flex gap-1 bg-slate-100 p-1 rounded-lg">
               {Object.values(UserRole).map(r => (
                 <button
                   key={r}
                   onClick={() => onRoleChange(r)}
-                  className={`text-[10px] px-2 py-1 rounded transition-all ${role === r ? 'bg-white shadow-sm font-bold text-blue-600' : 'text-slate-500'}`}
+                  className={`text-[9px] md:text-[10px] px-1.5 md:px-2 py-1 rounded transition-all ${role === r ? 'bg-white shadow-sm font-bold text-blue-600' : 'text-slate-500'}`}
                 >
-                  {r}
+                  {r.substring(0, 3)}
                 </button>
               ))}
             </div>
             
-            <button className="relative text-slate-400 hover:text-blue-600 transition-colors">
+            <button className="relative text-slate-400 hover:text-blue-600 transition-colors p-1">
               <Bell size={20} />
-              <span className="absolute -top-1 -right-1 w-2 h-2 bg-red-500 rounded-full border-2 border-white"></span>
+              <span className="absolute top-0 right-0 w-2 h-2 bg-red-500 rounded-full border-2 border-white"></span>
             </button>
-            <div className="w-10 h-10 bg-slate-200 rounded-full overflow-hidden border border-slate-300">
-              <img src={`https://picsum.photos/seed/${userName}/100`} alt="avatar" />
+            <div className="w-8 h-8 md:w-10 md:h-10 bg-slate-200 rounded-full overflow-hidden border border-slate-300 flex-shrink-0">
+              <img src={`https://picsum.photos/seed/${userName}/100`} alt="avatar" className="w-full h-full object-cover" />
             </div>
           </div>
         </header>
 
         {/* Dynamic View */}
-        <div className="flex-1 overflow-y-auto p-8">
+        <div className="flex-1 overflow-y-auto p-4 md:p-8">
           {children}
         </div>
       </main>
